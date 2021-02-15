@@ -70,14 +70,12 @@ class Ball:
 
                     self.dx = math.sin(self.d) * self.speed
                     self.dy = math.cos(self.d) * self.speed
-                    print("1 : " + str(self.dx) + "\t" + str(self.dy))
 
                 elif self.y >= 550 and self.dy > 0:
                     self.d = math.pi / 4 * random.random() + math.pi / 2 + math.pi / 2 * random.choice(lor)
 
                     self.dx = math.sin(self.d) * self.speed
                     self.dy = math.cos(self.d) * self.speed
-                    print("2 : " + str(self.dx) + "\t" + str(self.dy))
 
             else:
                 self.dy *= -1
