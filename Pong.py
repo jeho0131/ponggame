@@ -13,6 +13,15 @@ lscore = 0
 lor = [0, 1]
 mtimer = 0
 
+hitlscore = 0
+deflscore = 0
+
+hitrscore = 0
+defrscore = 0
+
+rpscore = 0
+lpscore = 0
+
 font = pygame.font.Font(None, 40)
 
 font2 = pygame.font.SysFont("corbel", 70)
@@ -24,6 +33,10 @@ sfont2 = pygame.font.Font(None, 300)
 
 tfont = pygame.font.Font(None, 50)
 
+ofont = pygame.font.Font(None, 80)
+ofont2 = pygame.font.Font(None, 100)
+ofont3 = pygame.font.Font(None, 150)
+
 class Bat:
     def __init__(self, ctrls, x, side):
         self.ctrls = ctrls
@@ -31,6 +44,8 @@ class Bat:
         self.y = 260
         self.side = side
         self.lastbop = 0
+        self.bopnum = 0
+        self.defnum = 0
 
     def move(self):
         if pressed_keys[self.ctrls[0]] and self.y > 0:
@@ -51,7 +66,7 @@ class Ball:
         self.d = (math.pi / 3) * random.random() + (math.pi / 3) + math.pi * random.choice(lor)
         self.speed = 12
         self.fast = random.randint(0, 5)
-        self.randball = random.randint(0, 1)
+        self.randball = random.randint(0, 10)
 
         if self.fast == 1 and self.randball != 1:
             self.speed = 24
@@ -105,6 +120,7 @@ class Ball:
                 if time.time() < bat.lastbop + 0.05:
                     if self.speed < 20:
                         self.speed *= 1.5
+                        bat.bopnum += 1
 
                 elif self.fast == 1:
                     self.speed *= 1.3
@@ -115,6 +131,7 @@ class Ball:
 
                 self.dx = math.sin(self.d) * self.speed
                 self.dy = math.cos(self.d) * self.speed
+                bat.defnum += 1
 
     def draw(self):
         screen.blit(ball_image, (int(self.x), int(self.y)))
@@ -122,28 +139,98 @@ class Ball:
 def start():
     screen.fill((0,0,0))
     stxt = sfont1.render("3", True, (255, 255, 255))
-    screen.blit(stxt, (400,150))
+    screen.blit(stxt, (int(screen.get_width() / 2 - stxt.get_width() / 2), int(screen.get_height() / 2 - stxt.get_height() / 2)))
     pygame.display.update()
     time.sleep(1)
     
     screen.fill((0,0,0))
     stxt = sfont1.render("2", True, (255,255,255))
-    screen.blit(stxt, (400,150))
+    screen.blit(stxt, (int(screen.get_width() / 2 - stxt.get_width() / 2), int(screen.get_height() / 2 - stxt.get_height() / 2)))
     pygame.display.update()
     time.sleep(1)
     
     screen.fill((0,0,0))
     stxt = sfont1.render("1", True, (255,255,255))
-    screen.blit(stxt, (400,150))
+    screen.blit(stxt, (int(screen.get_width() / 2 - stxt.get_width() / 2), int(screen.get_height() / 2 - stxt.get_height() / 2)))
     pygame.display.update()
     time.sleep(1)
 
     screen.fill((0,0,0))
     stxt = sfont2.render("START", True, (255,255,255))
-    screen.blit(stxt, (180, 180))
+    screen.blit(stxt, (int(screen.get_width() / 2 - stxt.get_width() / 2), int(screen.get_height() / 2 - stxt.get_height() / 2)))
     pygame.display.update()
     time.sleep(0.5)
 
+def timeout():
+    screen.fill((0,0,0))
+    otxt = ofont3.render("TIME OUT", True, (255,255,255))
+    screen.blit(otxt, (int(screen.get_width() / 2 - otxt.get_width() / 2), int(screen.get_height() / 2 - otxt.get_height() / 2)))
+    pygame.display.update()
+    time.sleep(2)
+
+    screen.fill((0,0,0))
+    otxt = ofont2.render("LEFT", True, (255,0,0))
+    screen.blit(otxt, (int(screen.get_width() / 4 - otxt.get_width() / 2), int(screen.get_height() / 16)))
+    otxt = ofont2.render("RIGHT", True, (255,0,0))
+    screen.blit(otxt, (int(screen.get_width() * 3 / 4 - otxt.get_width() / 2), int(screen.get_height() / 16)))
+    pygame.display.update()
+    time.sleep(1)
+
+    otxt = ofont2.render("hit", True, (255,255,255))
+    screen.blit(otxt, (50, int(screen.get_height() / 4)))
+    otxt = ofont.render(str(hitlscore), True, (255,255,255))
+    screen.blit(otxt, (int(screen.get_width() / 4 - otxt.get_width() / 2), int(screen.get_height() / 4)))
+    otxt = ofont.render(str(hitrscore), True, (255,255,255))
+    screen.blit(otxt, (int(screen.get_width() * 3 / 4 - otxt.get_width() / 2), int(screen.get_height() / 4)))
+    pygame.display.update()
+    time.sleep(1)
+
+    otxt = ofont2.render("def", True, (255,255,255))
+    screen.blit(otxt, (50, int(screen.get_height() / 2)))
+    otxt = ofont.render(str(deflscore), True, (255,255,255))
+    screen.blit(otxt, (int(screen.get_width() / 4 - otxt.get_width() / 2), int(screen.get_height() / 2)))
+    otxt = ofont.render(str(defrscore), True, (255,255,255))
+    screen.blit(otxt, (int(screen.get_width() * 3 / 4 - otxt.get_width() / 2), int(screen.get_height() / 2)))
+    pygame.display.update()
+    time.sleep(1)
+
+    rpscore = hitrscore * 10 + defrscore * 5
+    lpscore = hitlscore * 10 + deflscore * 5
+
+    if rpscore > lpscore:
+        otxt = ofont2.render("WIN", True, (255,215,0))
+        screen.blit(otxt, (int(screen.get_width() / 4 - otxt.get_width() / 2), int(screen.get_height() * 3 / 4)))
+        otxt = ofont2.render("LOSE", True, (255,0,0))
+        screen.blit(otxt, (int(screen.get_width() * 3 / 4 - otxt.get_width() / 2), int(screen.get_height() * 3 / 4)))
+        rscore += 1
+
+    elif rpscore < lpscore:
+        otxt = ofont2.render("LOSE", True, (255,0,0))
+        screen.blit(otxt, (int(screen.get_width() / 4 - otxt.get_width() / 2), int(screen.get_height() * 3 / 4)))
+        otxt = ofont2.render("WIN", True, (255,215,0))
+        screen.blit(otxt, (int(screen.get_width() * 3 / 4 - otxt.get_width() / 2), int(screen.get_height() * 3 / 4)))
+        lscore += 1
+
+    elif rpscore == lpscore:
+        otxt = ofont2.render("SAME", True, (255,255,255))
+        screen.blit(otxt, (int(screen.get_width() / 4 - otxt.get_width() / 2), int(screen.get_height() * 3 / 4)))
+        otxt = ofont2.render("SAME", True, (255,255,255))
+        screen.blit(otxt, (int(screen.get_width() * 3 / 4 - otxt.get_width() / 2), int(screen.get_height() * 3 / 4)))
+        
+    pygame.display.update()
+    time.sleep(2)
+    
+    reset()
+    start()
+
+def reset():
+    hitlscore = 0
+    deflscore = 0
+    hitrscore = 0
+    defrscore = 0
+    rpscore = 0
+    lpscore = 0
+                         
 ball = Ball()
 bats = [Bat([K_w, K_s], 10, -1), Bat([K_UP, K_DOWN], 984, 1)]
 
@@ -178,24 +265,36 @@ while 1:
 
     if ball.x < -50:
         ball = Ball()
+        mtimer = time.time()
         rscore += 1
 
     if ball.x > 1000:
         ball = Ball()
+        mtimer = time.time()
         lscore += 1
+
+    if int(60 - (time.time() - mtimer)) <= 50:
+        timeout()
+        mtimer = time.time()
+        ball = Ball()
 
     ball.move()
     ball.draw()
     ball.bounce()
+
+    hitlscore = bats[0].bopnum
+    hitrscore = bats[1].bopnum
+    deflscore = bats[0].defnum
+    defrscore = bats[1].defnum
 
     txt = font.render(str(lscore), True, (255, 255, 255))
     screen.blit(txt, (20, 20))
     txt = font.render(str(rscore), True, (255, 255, 255))
     screen.blit(txt, (980 - txt.get_width(), 20))
 
-    mcount = round(60-(time.time()-mtimer))
+    mcount = int(60-(time.time()-mtimer))
     timetxt = font.render(str(mcount), True, (255,0,0))
-    screen.blit(timetxt, (screen.get_width() * 24 / 50, 25))
+    screen.blit(timetxt, (int(screen.get_width() / 2 - timetxt.get_width() / 2), 25))
 
     if rscore > 9 or lscore > 9:
         screen.fill((0, 0, 0))
@@ -211,7 +310,7 @@ while 1:
         screen.blit(txt, (int(screen.get_width() * 3 / 4 - txt.get_width() / 2), int(screen.get_height() / 2)))
 
         txt = font4.render("Press Space to restart", True, (255, 255, 255))
-        screen.blit(txt, (int(screen.get_width() * 2 / 5), int(screen.get_height() - 50)))
+        screen.blit(txt, (int(screen.get_width() / 2 - txt.get_width() / 2), int(screen.get_height() - 50)))
 
         while 1:
             for event in pygame.event.get():
@@ -219,12 +318,14 @@ while 1:
                     sys.exit()
             pressed_keys = pygame.key.get_pressed()
             if pressed_keys[K_SPACE]:
-                lscore = 0
+                reset()
                 rscore = 0
+                lscore = 0
                 bats[0].y = 200
                 bats[1].y = 200
                 ball = Ball()
                 start()
+                mtimer = time.time()
                 break
             pygame.display.update()
 
