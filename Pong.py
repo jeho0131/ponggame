@@ -59,7 +59,7 @@ mfont2 = pygame.font.Font(None, 100)
 #배트 구성
 class Bat:
     #배트 기초 값
-    def __init__(self, ctrls, x, side):
+    def __init__(self, ctrls, x, side, mode):
         self.ctrls = ctrls
         self.x = x
         self.y = 260
@@ -67,13 +67,38 @@ class Bat:
         self.lastbop = 0
         self.bopnum = 0
         self.defnum = 0
+        self.mode = mode
 
-    #배트의 좌우 이동
+    #배트의 이동
     def move(self):
-        if pressed_keys[self.ctrls[0]] and self.y > 0:
-            self.y -= 10
-        if pressed_keys[self.ctrls[1]] and self.y < 520:
-            self.y += 10
+        #mode가 1일 경우 실행
+        if self.mode == 1:
+            b = ball
+            
+            #화면 밖에 나가지 않으면 실행
+            if self.y >= 0 and self.y <= 520:
+                for i in range(5):
+                    #공보다 y좌표가 크면 y좌표 줄어들기
+                    if b.y < self.y:
+                        self.y -= 1
+
+                    #공보다 y좌표가 작으면 y좌표 늘리기
+                    if b.y > self.y:
+                        self.y += 1
+
+            else:
+                #화면 밖에 나가면 화면안으로 도려놓음
+                if self.y <= 0:
+                    self.y = 1
+                    
+                elif self.y >= 520:
+                    self.y = 519
+            
+        else:
+            if pressed_keys[self.ctrls[0]] and self.y > 0:
+                self.y -= 10
+            if pressed_keys[self.ctrls[1]] and self.y < 520:
+                self.y += 10
 
     #배트 그리기
     def draw(self):
@@ -161,8 +186,17 @@ class Ball:
                 #각도가 마이너스(-)가 되지 않도록 수정
                 self.d %= math.pi * 2
 
+                #배트의 mode가 1이고 배트로 공을 칠려고 한 시간이 0.05초 이내이면 50%의 확률로 공이 매우 빨라집니다
+                if bat.mode == 1 and time.time() < bat.lastbop + 0.05:
+                    r = random.randint(0,1)
+                    if r == 1:
+                        if self.speed < 50:
+                            self.speed *= 1.5
+                            bat.bopnum += 1
+                        hit_sound.play()
+                
                 #배트로 공을 칠려고 한 시간이 0.05초이내라면 공이 쳐지고 공의 속도가 더욱 빨라진다
-                if time.time() < bat.lastbop + 0.05:
+                elif time.time() < bat.lastbop + 0.05:
                     if self.speed < 50:
                         self.speed *= 1.5
                         bat.bopnum += 1
@@ -170,7 +204,7 @@ class Ball:
                         
                 #fast가 1이라면 속도가 공을 막을때 마다 1.3배씩 계속해서 빨라진다
                 elif self.fast == 1:
-                    self.speed *= 1.3
+                    self.speed *= 1.2
                     def_sound.play()
 
                 #속도가 20전일때 공을 막을때마다 1.1배씩 속도가 빨라진다
@@ -295,7 +329,7 @@ def reset():
 #공 생성                      
 ball = Ball()
 #배트 생성
-bats = [Bat([K_w, K_s], 10, -1), Bat([K_UP, K_DOWN], 984, 1)]
+bats = [Bat([K_w, K_s], 10, -1, 0), Bat([K_UP, K_DOWN], 984, 1, 0)]
 
 while 1:
     clock.tick(30)
@@ -303,8 +337,8 @@ while 1:
     if m == "start":
         for event in pygame.event.get():
             if event.type == QUIT:
-                sys.exit()
                 pygame.quit()
+                sys.exit()
         
         #화면 초기화
         screen.fill((0,0,0))
@@ -340,6 +374,9 @@ while 1:
         if pygame.mouse.get_pressed()[0] and p1button.collidepoint(pygame.mouse.get_pos()):
             #모드를 1인 모드로 변경
             m = "play1"
+
+            #배트 생성
+            bats = [Bat([K_w, K_s], 10, -1, 1), Bat([K_UP, K_DOWN], 984, 1, 0)]
             
             #시작 함수
             start()
@@ -358,6 +395,113 @@ while 1:
             mtimer = time.time()
         
         pygame.display.update()
+
+    if m == "play1":
+        #화면 초기화
+        screen.fill((0, 0, 0))
+        
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == KEYDOWN:
+                #shift를 누르면 오른쪽 배트가 공을 칠려고 시도
+                if event.key == K_RSHIFT:
+                    bats[1].bop()
+
+        if ball.x <= 20:           
+            bats[0].bop()
+            
+        pressed_keys = pygame.key.get_pressed()
+                
+        #화면에 배경 그리기
+        pygame.draw.line(screen, (255, 255, 255), (int(screen.get_width() / 2), 0),
+                         (int(screen.get_width() / 2), screen.get_height()), 3)
+        pygame.draw.circle(screen, (255, 255, 255), (int(screen.get_width() / 2), int(screen.get_height() / 2)), 50, 3)
+
+        #배트 움직이기
+        for bat in bats:
+            bat.move()
+            bat.draw()
+
+        #공이 왼쪽으로 넘어갈시 공, 시간 초기화 오른쪽 배트 득점
+        if ball.x < -50:
+            reset()
+            mtimer = time.time()
+            rscore += 1
+
+        #공이 오른쪽으로 넘어갈시 공, 시간 초기화 왼쪽 배트 득점
+        if ball.x > 1000:
+            reset()
+            mtimer = time.time()
+            lscore += 1
+
+        #한 게임에 시간이 30초가 지났을경우 timeout 함수 실행
+        if int(30 - (time.time() - mtimer)) <= 0:
+            timeout()
+            mtimer = time.time()
+
+        #공을 움직이고 튕기기
+        ball.move()
+        ball.draw()
+        ball.bounce()
+
+        #배트가 공을 친 횟수, 공을 막은 횟수를 업데이트
+        hitlscore = bats[0].bopnum
+        hitrscore = bats[1].bopnum
+        deflscore = bats[0].defnum
+        defrscore = bats[1].defnum
+
+        #각 배트의 점수를 화면에 그리기
+        txt = font.render(str(lscore), True, (255, 255, 255))
+        screen.blit(txt, (20, 20))
+        txt = font.render(str(rscore), True, (255, 255, 255))
+        screen.blit(txt, (980 - txt.get_width(), 20))
+
+        #남은 시간 화면에 그리기
+        mcount = int(30-(time.time()-mtimer))
+        timetxt = font.render(str(mcount), True, (255,0,0))
+        screen.blit(timetxt, (int(screen.get_width() / 2 - timetxt.get_width() / 2), 25))
+
+        #두 배트 중에서 10점이 넘긴 배트가 있을경우 실행
+        if rscore > 9 or lscore > 9:
+            screen.fill((0, 0, 0))
+
+            txt = font2.render("score", True, (255, 0, 0))
+            screen.blit(txt, (int(screen.get_width() / 4 - txt.get_width() / 2), int(screen.get_height() / 4)))
+            screen.blit(txt, (int(screen.get_width() * 3 / 4 - txt.get_width() / 2), int(screen.get_height() / 4)))
+
+            txt = font3.render(str(lscore), True, (255, 255, 255))
+            screen.blit(txt, (int(screen.get_width() / 4 - txt.get_width() / 2), int(screen.get_height() / 2)))
+
+            txt = font3.render(str(rscore), True, (255, 255, 255))
+            screen.blit(txt, (int(screen.get_width() * 3 / 4 - txt.get_width() / 2), int(screen.get_height() / 2)))
+
+            txt = font4.render("Press Space to restart", True, (255, 255, 255))
+            screen.blit(txt, (int(screen.get_width() / 2 - txt.get_width() / 2), int(screen.get_height() - 50)))
+        
+            while 1:
+                for event in pygame.event.get():
+                    if event.type == QUIT:
+                        pygame.quit()
+                        sys.exit()
+                pressed_keys = pygame.key.get_pressed()
+                #space를 누르면 다시 실행
+                if pressed_keys[K_SPACE]:
+                    reset()
+                    rscore = 0
+                    lscore = 0
+                
+                    bats[0].y = 200
+                    bats[1].y = 200
+                
+                    m = "start"
+                    mtimer = time.time()
+                    break
+                pygame.display.update()
+
+        pygame.display.update()
         
     if m == "play2":
         #화면 초기화
@@ -365,13 +509,14 @@ while 1:
         
         for event in pygame.event.get():
             if event.type == QUIT:
-                sys.exit()
                 pygame.quit()
+                sys.exit()
 
             if event.type == KEYDOWN:
                 #q를 누르면 왼쪽 배트가 공을 칠려고 시도
                 if event.key == K_q:
                     bats[0].bop()
+                    
                 #shift를 누르면 오른쪽 배트가 공을 칠려고 시도
                 if event.key == K_RSHIFT:
                     bats[1].bop()
@@ -447,6 +592,7 @@ while 1:
             while 1:
                 for event in pygame.event.get():
                     if event.type == QUIT:
+                        pygame.quit()
                         sys.exit()
                 pressed_keys = pygame.key.get_pressed()
                 #space를 누르면 다시 실행
